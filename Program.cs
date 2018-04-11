@@ -1,4 +1,5 @@
-﻿using System;
+﻿using DeafX.Roy.Business;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -12,131 +13,46 @@ namespace DeafX.Roy
     {
         static void Main(string[] args)
         {
-            var font = ParseFont("Broadway");
-            
-            var stringToPrint = "hejsan";
+            Console.WriteLine("RTC v.1.0");
+            Console.WriteLine("--------------------------");
+            Console.WriteLine();
+            Console.WriteLine("1. Projektanteckningar");
+            Console.WriteLine("2. Mötesanteckningar");
+            Console.WriteLine();
+            Console.Write("Välj ett alternativ:");
 
-            StringBuilder[] rowsToPrint = font[0].Strings.Select(s => new StringBuilder()).ToArray();
+            var choice = Console.ReadKey();
 
-            foreach(var charToPrint in stringToPrint)
+            switch(choice.Key)
             {
-                
-
-                if(charToPrint == ' ')
-                {
-                    foreach(var row in rowsToPrint)
-                    {
-                        row.Append("   ");
-                    }
-
-                    continue;
-                }
-
-                var fontChar = font.FirstOrDefault(f => f.Character == charToPrint);
-
-                if(fontChar == null)
-                {
-                    continue;
-                }
-
-                for(var row = 0; row < rowsToPrint.Length; row++)
-                {
-                    rowsToPrint[row].Append(fontChar.Strings[row]);
-                }
-
-                foreach (var row in rowsToPrint)
-                {
-                    row.Append(' ');
-                }
+                case ConsoleKey.D2:
+                case ConsoleKey.NumPad2:
+                    CreateFile(false);
+                    break;
+                default:
+                    CreateFile(true);
+                    break;
             }
 
-            using (var streamWriter = new StreamWriter("C:\\Temp\\Testfil.txt"))
-            {
-                foreach(var row in rowsToPrint)
-                {
-                    streamWriter.WriteLine(row.ToString().TrimEnd());
-                }
-            }
         }
 
-        private static char[] Characters = new char[] { 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9' };
-
-        static FontChar[] ParseFont(string fontName)
+        private static void CreateFile(bool project)
         {
-            string fontString = GetStringFromFile(fontName);
+            Console.Write("\n" + (project ? "Projektnamn:" : "Mötesnamn"));
+            var projectName = Console.ReadLine();
 
-            var rows = fontString.Split('\n');
+            Console.Write("Titel:");
+            var title = Console.ReadLine();
 
-            var fontChars = new List<FontChar>();
-            var charCnt = 0;
+            var templateWriter = new TemplateWriter();
 
-            for(var index = 0; index < rows[0].Length;)
-            {
-                var charEnd = FindNextSpace(index, rows);
+            var folder = project ? "Projekt & Features" : "Möten";
+            var folderPath = $@"H:\dokument\-=[Dokument Sparas\{folder}\{projectName}";
 
-                fontChars.Add(new FontChar()
-                {
-                    Character = Characters[charCnt++],
-                    Strings = rows.Select(s => s.Substring(index, charEnd - index)).ToArray()
-                });
+            Directory.CreateDirectory(folderPath);
 
-                index = charEnd + 1;
-            }
-
-            return fontChars.ToArray();
+            templateWriter.PrintToFile($@"{folderPath}\Anteckningar.txt", title.Length == 0 ? projectName : title, "Anteckningar");
         }
 
-        private static int FindNextSpace(int startIndex, string[] rows)
-        {
-
-            for(var index = startIndex; index < rows[0].Length; index++)
-            {
-                if(rows.All(r => r[index] == ' '))
-                {
-                    if (index - startIndex > 3)
-                    {
-                        return index;
-                    }
-                }
-            }
-
-            return rows[0].Length - 1;
-        }
-
-        private static string GetStringFromFile(string fileName)
-        {
-            var assembly = Assembly.GetExecutingAssembly();
-            var resourceName = $"DeafX.Roy.Fonts.{fileName}.txt";
-
-            using (Stream stream = assembly.GetManifestResourceStream(resourceName))
-            {
-                using (StreamReader reader = new StreamReader(stream))
-                {
-                    return reader.ReadToEnd();
-                }
-            }
-        }
-
-        public class FontChar
-        {
-            public char Character { get; set; }
-
-            public string[] Strings { get; set; }
-
-            public int Height {
-                get
-                {
-                    return Strings == null ? 0 : Strings.Length;
-                }
-            }
-
-            public int Width
-            {
-                get
-                {
-                    return  Strings == null ? 0 : Strings[0].Length;
-                }
-            }
-        }
     }
 }
